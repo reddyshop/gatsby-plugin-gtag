@@ -1,5 +1,6 @@
 import React from 'react';
 import { antiFlickerStyle, antiFlickerScript } from './antiflicker';
+import gtmScript from './gtm';
 const GTAG_SRC = `https://www.googletagmanager.com/gtag/js`;
 const OPTIMIZE_SRC = `https://www.googleoptimize.com/optimize.js`;
 
@@ -51,6 +52,20 @@ exports.onRenderBody = (
     gtag('js', new Date());
     gtag('config', '${pluginOptions.trackingId}', options);
   `;
+
+  const noScript = (
+    <noscript>
+      <iframe
+        src={`https://www.googletagmanager.com/ns.html?id=${
+          pluginOptions.trackingId
+        }`}
+        height="0"
+        width="0"
+        style={{ display: 'none', visibility: 'hidden' }}
+      />
+    </noscript>
+  );
+
   const trackScript = (
     <script
       key="gatsby-plugin-gtag-inline-script"
@@ -62,13 +77,21 @@ exports.onRenderBody = (
     ? setHeadComponents
     : setPostBodyComponents;
 
-  return setComponents([
+  const scriptComponents = [
     ...(pluginOptions.head && pluginOptions.antiFlicker
       ? [antiFlickerStyle, antiFlickerScript(pluginOptions.trackingId)]
       : []),
     ...(pluginOptions.optimizeId ? [optimizeScript] : []),
     gtagScript,
+    gtmScript(pluginOptions.trackingId),
     trackScript,
+  ];
+
+  setHeadComponents([...(pluginOptions.head ? scriptComponents : [])]);
+
+  setPostBodyComponents([
+    ...(pluginOptions.head ? [] : scriptComponents),
+    noScript,
   ]);
 };
 
